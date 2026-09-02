@@ -133,10 +133,9 @@ Eigen::VectorXd BeamModel::ComputeNaturalFrequencies(double N) {
     Eigen::VectorXd freq(lambda.size());
     for (int i = 0; i < lambda.size(); i++) {
         double w2 = lambda(i);
-        if (w2 < 0.0) {
-            w2 = 0.0;   // buckled: mode has no real frequency
-        }
-        freq(i) = sqrt(w2) / (2.0 * M_PI);
+        // A negative eigenvalue means the mode has lost stability under
+        // compression. Report NaN rather than clamping, so the caller sees it.
+        freq(i) = (w2 < 0.0) ? std::nan("") : sqrt(w2) / (2.0 * M_PI);
     }
     return freq;
 }

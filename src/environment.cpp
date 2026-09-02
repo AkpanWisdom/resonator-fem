@@ -60,6 +60,9 @@ double EnvironmentModel::Advance(double T, double h, double dt) {
     // Microprestress evolution. The driving term is the rate of change of
     // T*ln(h), so the state depends on how fast the environment moved.
     // Implicit on the decay term keeps S positive for any step size.
+    if (h <= 0.0 || h > 1.0) {
+        return m_sigma;   // humidity must lie in (0, 1]
+    }
     double drive = std::abs(T * log(h) - m_Tprev * log(m_hprev)) / dt;
     m_S = (m_S + m_c1 * drive * dt) / (1.0 + m_c0 * m_S * dt);
     if (m_S < 1.0e-12) {
