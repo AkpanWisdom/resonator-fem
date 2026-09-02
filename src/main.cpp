@@ -1,52 +1,40 @@
 // =============================================================================
-// Static verification: clamped-clamped beam under midspan point load.
-// Exact solution: delta = P L^3 / (192 EI)
+// Convergence of the first three natural frequencies of a clamped-clamped
+// beam against the Euler-Bernoulli analytical solution.
 // =============================================================================
 
-#include <iostream>
-#include <iomanip>
+#include <cstdio>
 #include <cmath>
 #include "beam.h"
 
 int main() {
-    int nelem = 20;          // even, so a node sits at midspan
     double length = 1.0;
     double EI = 1.0;
     double rhoA = 1.0;
-    double P = 1.0;
 
-    BeamModel beam(nelem, length, EI, rhoA);
+    int meshes[5] = {4, 8, 16, 32, 64};
 
-    Eigen::MatrixXd K = beam.AssembleStiffness();
-    std::vector<int> free = beam.GetFreeDofsClampedClamped();
-    Eigen::MatrixXd Kr = beam.Reduce(K, free);
-
-    // Load applied at the transverse DOF of the midspan node.
-    int middof = 2 * (nelem / 2);
-    Eigen::VectorXd F = Eigen::VectorXd::Zero(free.size());
-    for (int i = 0; i < (int)free.size(); i++) {
-        if (free[i] == middof) {
-            F(i) = P;
-        }
+    BeamModel ref(4, length, EI, rhoA);
+    double fex[3];
+    for (int n = 0; n < 3; n++) {
+        fex[n] = ref.ComputeExactFrequency(n + 1);
     }
 
-    Eigen::VectorXd u = Kr.ldlt().solve(F);
+    printf("Clamped-clamped beam, L=1, EI=1, rhoA=1\n");
+    printf("exact: f1=%.6f  f2=%.6f  f3=%.6f\n\n", fex[0], fex[1], fex[2]);
+    printf("nelem        f1     err1 %%         f2     err2 %%         f3     err3 %%\n");
 
-    double computed = 0.0;
-    for (int i = 0; i < (int)free.size(); i++) {
-        if (free[i] == middof) {
-            computed = u(i);
+    for (int m = 0; m < 5; m++) {
+        BeamModel beam(meshes[m], length, EI, rhoA);
+        Eigen::VectorXd f = beam.ComputeNaturalFrequencies(0.0);
+
+        printf("%5d", meshes[m]);
+        for (int n = 0; n < 3; n++) {
+            double err = std::abs(f(n) - fex[n]) / fex[n] * 100.0;
+            printf("  %9.6f  %9.4f", f(n), err);
         }
+        printf("\n");
     }
-
-    double exact = P * pow(length, 3) / (192.0 * EI);
-    double err = std::abs(computed - exact) / exact * 100.0;
-
-    std::cout << std::scientific << std::setprecision(10);
-    std::cout << "computed = " << computed << "\n";
-    std::cout << "exact    = " << exact << "\n";
-    std::cout << std::fixed << std::setprecision(10);
-    std::cout << "error    = " << err << " %\n";
 
     return 0;
 }

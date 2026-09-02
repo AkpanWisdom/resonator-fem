@@ -2,6 +2,7 @@
 // Beam element matrices for prestressed modal analysis
 // =============================================================================
 
+#include <cmath>
 #include "beam.h"
 
 BeamModel::BeamModel(int nelem, double length, double EI, double rhoA)
@@ -107,4 +108,45 @@ Eigen::MatrixXd BeamModel::Reduce(const Eigen::MatrixXd& A, const std::vector<in
         }
     }
     return R;
+}
+
+// Generalized symmetric eigenproblem: K phi = omega^2 M phi.
+// Eigen returns eigenvalues in ascending order, so frequencies come out sorted.
+Eigen::VectorXd BeamModel::ComputeNaturalFrequencies(double N) {
+    std::vector<int> free = GetFreeDofsClampedClamped();
+
+    Eigen::MatrixXd K = AssembleStiffness();
+    Eigen::MatrixXd M = AssembleMass();
+    Eigen::MatrixXd Ktot = K;
+    if (N != 0.0) {
+        Ktot += AssembleGeometric(N);
+    }
+
+    Eigen::MatrixXd Kr = Reduce(Ktot, free);
+    Eigen::MatrixXd Mr = Reduce(M, free);
+
+    Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> solver(Kr, Mr);
+
+    Eigen::VectorXd lambda = solver.eigenvalues();
+
+    // omega^2 = lambda, f = omega / (2 pi)
+    Eigen::VectorXd freq(lambda.size());
+    for (int i = 0; i < lambda.size(); i++) {
+        double w2 = lambda(i);
+        if (w2 < 0.0) {
+            w2 = 0.0;   // buckled: mode has no real frequency
+        }
+        freq(i) = sqrt(w2) / (2.0 * M_PI);
+    }
+    return freq;
+}
+
+// f_n = (bn L)^2 / (2 pi L^2) sqrt(EI / rhoA), roots of cos(bL)cosh(bL) = 1.
+double BeamModel::ComputeExactFrequency(int n) {
+    double bL[3] = {4.730040745, 7.853204624, 10.995607838};
+    if (n < 1 || n > 3) {
+        return 0.0;
+    }
+    double b2 = bL[n - 1] * bL[n - 1];
+    return b2 / (2.0 * M_PI * m_length * m_length) * sqrt(m_EI / m_rhoA);
 }

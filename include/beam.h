@@ -15,19 +15,6 @@ class BeamModel {
   public:
     BeamModel(int nelem, double length, double EI, double rhoA);
 
-    int GetNelem() const { return m_nelem; }
-    void SetNelem(int mnelem) { m_nelem = mnelem; }
-
-    double GetLength() const { return m_length; }
-    void SetLength(double mlength) { m_length = mlength; }
-
-    double GetEI() const { return m_EI; }
-    void SetEI(double mEI) { m_EI = mEI; }
-
-    double GetRhoA() const { return m_rhoA; }
-    void SetRhoA(double mrhoA) { m_rhoA = mrhoA; }
-
-    int GetNnode() const { return m_nelem + 1; }
     int GetNdof() const { return 2 * (m_nelem + 1); }
     double GetElemLength() const { return m_length / m_nelem; }
 
@@ -46,6 +33,12 @@ class BeamModel {
 
     /// Extract the submatrix at the given DOF indices.
     Eigen::MatrixXd Reduce(const Eigen::MatrixXd& A, const std::vector<int>& dofs);
+
+    /// Solve K phi = omega^2 M phi. N > 0 in tension. Frequencies in Hz.
+    Eigen::VectorXd ComputeNaturalFrequencies(double N);
+
+    /// Analytical clamped-clamped frequency, mode n = 1,2,3, zero axial force.
+    double ComputeExactFrequency(int n);
 
   private:
     int m_nelem;
