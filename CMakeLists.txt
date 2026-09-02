@@ -14,6 +14,6 @@ set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(Eigen)
 
-add_executable(resonator src/main.cpp src/beam.cpp)
+add_executable(resonator src/main.cpp src/beam.cpp src/environment.cpp)
 target_include_directories(resonator PRIVATE include)
 target_link_libraries(resonator PRIVATE Eigen3::Eigen)
