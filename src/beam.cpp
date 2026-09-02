@@ -149,3 +149,38 @@ double BeamModel::ComputeExactFrequency(int n) {
     double b2 = bL[n - 1] * bL[n - 1];
     return b2 / (2.0 * M_PI * m_length * m_length) * sqrt(m_EI / m_rhoA);
 }
+
+// Mode shapes, expanded from the reduced system back to full node numbering.
+// Only the transverse DOFs are returned; rotations are dropped for plotting.
+Eigen::MatrixXd BeamModel::ComputeModeShapes(double N, int nmodes) {
+    std::vector<int> free = GetFreeDofsClampedClamped();
+
+    Eigen::MatrixXd Ktot = AssembleStiffness();
+    if (N != 0.0) {
+        Ktot += AssembleGeometric(N);
+    }
+    Eigen::MatrixXd M = AssembleMass();
+
+    Eigen::MatrixXd Kr = Reduce(Ktot, free);
+    Eigen::MatrixXd Mr = Reduce(M, free);
+
+    Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> solver(Kr, Mr);
+    Eigen::MatrixXd vec = solver.eigenvectors();
+
+    int nnode = m_nelem + 1;
+    Eigen::MatrixXd shapes = Eigen::MatrixXd::Zero(nnode, nmodes);
+
+    for (int k = 0; k < nmodes; k++) {
+        for (int i = 0; i < (int)free.size(); i++) {
+            int dof = free[i];
+            if (dof % 2 == 0) {              // transverse DOF
+                shapes(dof / 2, k) = vec(i, k);
+            }
+        }
+        double amp = shapes.col(k).cwiseAbs().maxCoeff();
+        if (amp > 0.0) {
+            shapes.col(k) /= amp;
+        }
+    }
+    return shapes;
+}

@@ -40,6 +40,11 @@ class BeamModel {
     /// Analytical clamped-clamped frequency, mode n = 1,2,3, zero axial force.
     double ComputeExactFrequency(int n);
 
+    /// Mode shapes for the lowest nmodes. Columns hold transverse displacement
+    /// at each node, including the fixed ends. Each column is scaled to unit
+    /// maximum amplitude.
+    Eigen::MatrixXd ComputeModeShapes(double N, int nmodes);
+
   private:
     int m_nelem;
     double m_length;

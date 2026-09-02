@@ -52,7 +52,7 @@ int main() {
     int nsteps = 2000;
     double dt_hours = thold / nsteps;
 
-    double sigma_tol = 2.0e3;
+    double sigma_tol = 0.0;   // solve every step for the plotted figure
 
     printf("f1 at zero stress = %.6f Hz\n\n", f0);
 

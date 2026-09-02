@@ -18,7 +18,7 @@ add_library(resonator_core src/beam.cpp src/environment.cpp)
 target_include_directories(resonator_core PUBLIC include)
 target_link_libraries(resonator_core PUBLIC Eigen3::Eigen)
 
-foreach(ex modal_convergence prestress_sweep coupled_history)
+foreach(ex modal_convergence prestress_sweep coupled_history mode_shapes)
   add_executable(${ex} examples/${ex}.cpp)
   target_link_libraries(${ex} PRIVATE resonator_core)
 endforeach()
